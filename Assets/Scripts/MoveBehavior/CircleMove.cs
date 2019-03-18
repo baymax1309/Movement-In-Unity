@@ -16,14 +16,28 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
     private float _distance; // [s] = >unity_unit<
     private Vector3 _distanceVector;
 
-    private Rigidbody _rigidBody;
 
-    private float _timeOfCirculation; // [t] = s
-    private float _omega; // [w] = 1/s
-    private float _timeStart;
-    private float _timeCounter;
-    private bool _stopMovement = true;
-    private bool b_ready = false;
+    /* circle-equation
+     * 
+     *  x = cos(phi + c) * distance
+     *  z = sin(phi + c) * distance
+     *  
+     *      phi = w * t = 2pi * f * t = 2pi / T * t
+     *        phi ... angle
+     *        w ... angular velocity
+     *        f ... frequence
+     *        T ... time of circulation
+     *        t ... time
+     *        _angle = phi + c
+     */
+    private float _w; // [w] = 1/s
+    private float _c;
+    private float _T; // [T] = 1/s
+    private float _phi;
+    private float _angle;
+    private float _t;
+    
+    
 
     #endregion
 
@@ -40,134 +54,95 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
         this._distanceVector = _startVector_ObjRef - _startVector_ObjMov;
         this._distance = _distanceVector.magnitude;
 
-        this._omega = Mathf.PI * 2 / timeOfCirculation;
+        this._w = Mathf.PI * 2 / timeOfCirculation;
+        this._T = timeOfCirculation;
+        this._c = Calculate_c();
+        this._t = 0;
 
-        this._timeOfCirculation = timeOfCirculation;
-        this._timeStart = CalculateTimeStart();
-        this._timeCounter = _timeStart;
 
-        
-        Debug.Log("Omega = " + _omega);
-
-        b_ready = true;
+        #region Debug
+        // Debug Output
+        Debug.Log("--Init----------------------------");
+        Debug.Log("Omega = " + _w);
+        Debug.Log("d = " + _distance);
+        Debug.Log("c = " + _c);
+        Debug.Log("CounterTime = " + _t);
+        Debug.Log("----------------------------------");
+        #endregion
     }
 
 
-    int i = 1;
+    int i = 1; // debug index
     public void StartMovement()
     {
-        //if (!b_ready) return;
-        Debug.Log("i = " + i++);
+        Debug.Log("i = " + i++); // inkrement
 
-        _timeCounter += Time.deltaTime;
-        
-        if (!_stopMovement) return;
-        else
-        {
-            // calculate Pose
-            Vector3 newPos = NewCirclePosition();
-            Vector3 newRot = NewOrientation4ObjectMove();
+        // calculate new parameter
+        _t += Time.deltaTime;
+        _phi = _t * _w;
+        _angle = _phi + _c;
+
+        // calculate new pose
+        Vector3 newPos = NewCirclePosition();
+        Vector3 newRot = NewOrientation4ObjectMove();
             
-            // set Pose
-            _objMov.transform.SetPositionAndRotation(newPos, Quaternion.Euler(newRot));
-        }
-       
+        // set new pose
+        _objMov.transform.SetPositionAndRotation(newPos, Quaternion.Euler(newRot));
+        //_objMov.transform.SetPositionAndRotation(newPos, Quaternion.identity); // no turn of moving obj
+
     }
 
     public void StopMovement()
     {
-        _stopMovement = false;
+        //_stopMovement = false;
     }
-
     #endregion
 
 
-    
+    #region more functions
     private Vector3 NewCirclePosition()
     {
-
-        float phi = (_timeStart - _c) * _omega;
-
-
-        float x = -Mathf.Sin(phi) * _distance;
-        float y = 0;// _objRef.transform.InverseTransformPoint(_startVector_ObjMov).y;
-        float z = Mathf.Cos(phi) * _distance;
+        // calculate local
+        float x = Mathf.Cos(_angle) * _distance;
+        float y = _objRef.transform.InverseTransformPoint(_startVector_ObjMov).y;
+        float z = Mathf.Sin(_angle) * _distance;
 
         Vector3 newPosLocal = new Vector3(x, y, z);
+
+        // set global
         Vector3 newPosGlobal = _objRef.transform.TransformPoint(newPosLocal);
-        //newPosGlobal.y = _startVector_ObjMov.y; //stays constant 
 
-
-        Debug.Log("StartTime = " + _timeStart);
-        Debug.Log("t = " + _timeCounter + " = " + _timeCounter / Mathf.PI + " pi");
-        Debug.Log("Phi = " + phi);
+        #region Debug
+        Debug.Log("t = " + _t + " = " + _t / Mathf.PI + " * pi");
+        Debug.Log("Phi = w * t = " + _w + " * " + _t + " = " + _phi);
         Debug.Log("Local_V  = (" + newPosLocal.x + ", " + newPosLocal.y + ", " + newPosLocal.z + ")");
         Debug.Log("Global_V = (" + newPosGlobal.x + ", " + newPosGlobal.y + ", " + newPosGlobal.z + ")");
-        
-
+        Debug.Log("----------------------------------");
+        #endregion
 
         return newPosGlobal;
     }
 
+    /**
+     * logic for the orientation of the moving object while turning around ref-object
+     */
     private Vector3 NewOrientation4ObjectMove()
     {
         float rotX = _startVector_ObjMov_Orientation.x;
-        float rotY = _startVector_ObjMov_Orientation.y - (int)((_timeCounter - _timeStart) * 180 / 3.1456f);
+        float rotY = _startVector_ObjMov_Orientation.y - (_phi) * 180 / 3.1456f; // phi * 360° / (2*pi)
         float rotZ = _startVector_ObjMov_Orientation.z;
         return new Vector3(rotX, rotY, rotZ); 
     }
 
-
-
-
-    private float _c;
-   
-
-    private float CalculateTimeStart()
+         
+    /**
+     * calclation relates to the local system of the ref-system
+     */
+    private float Calculate_c()
     {
-
-        // returns local vector in relation between ref- and move-obj in the system of ref-obj
         Vector3 v_obj_local = _objRef.transform.InverseTransformPoint(_startVector_ObjMov);
-        Debug.Log("v_onj_local");
-        Debug.Log(v_obj_local);
-
-        float t = 0;
-
-        float counter;
-        float denominator;
-
-        if (_distance == 0 || v_obj_local.z == 0)
-        {
-            t = (v_obj_local.x > 0) ? -Mathf.PI / 2 : +Mathf.PI / 2;
-        }    
-        else
-        {
-            counter = v_obj_local.x;
-            denominator = v_obj_local.z;// * _omega;
-            Debug.Log("counter = " + counter);
-            Debug.Log("denominator = " + denominator);
-
-            //t = Mathf.PI * 2 - Mathf.Atan2(counter , denominator);
-            t = - Mathf.Atan2(counter , denominator) / _omega ;
-        }
-
-
-        Debug.Log("Start Time: t = " + t/(Mathf.PI) +" PI");
-
-
-
-
-
-
-
-
-
-
-        _c = Mathf.Asin(_startVector_ObjMov.x / _distance) / _omega + t;
-        _c *= (-1);
-        _c = 0;
-
-
-        return t;
+        float shift = Mathf.Atan2(v_obj_local.z, v_obj_local.x); // shift at time t=0;
+        return shift;
     }
+    #endregion
 }
