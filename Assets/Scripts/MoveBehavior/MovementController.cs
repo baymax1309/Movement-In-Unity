@@ -13,7 +13,7 @@ public class MovementController : MonoBehaviour {
 
     [SerializeField]
     [Tooltip("is the time in sec to pass the given distance. 'StraightMove' time for the distance. 'CircleMove' time for one turn")]
-    private float _speed = 10;
+    private float _time = 10;
 
     [Header("Initialization - Settings")]
     [SerializeField]
@@ -44,10 +44,8 @@ public class MovementController : MonoBehaviour {
 
     private void OnEnable()
     {
-
-
         MoveBehavior = SetStrategyByDropDown();
-        MoveBehavior.Init(gObj, gRef, _speed, _direction, _turnObject);
+        MoveBehavior.Init(gObj, gRef, _time, _direction, _turnObject);
     }
 	
 	// Update every frame and calculate new position for the moving obj
