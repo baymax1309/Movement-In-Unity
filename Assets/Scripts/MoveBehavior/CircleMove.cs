@@ -15,7 +15,8 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
 
     private float _distance; // [s] = >unity_unit<
     private Vector3 _distanceVector;
-
+    private bool _direction;
+    private bool _turnObject;
 
     /* circle-equation
      * 
@@ -36,13 +37,15 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
     private float _phi;
     private float _angle;
     private float _t;
+
+
     
     
 
     #endregion
 
     #region Interface Methods
-    public void Init(GameObject objMov, GameObject objRef, float timeOfCirculation)
+    public void Init(GameObject objMov, GameObject objRef, float timeOfCirculation, bool direction, bool turnObject)
     {
         this._objMov = objMov;
         this._objRef = objRef;
@@ -59,6 +62,8 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
         this._c = Calculate_c();
         this._t = 0;
 
+        this._direction = direction;
+        this._turnObject = turnObject;
 
         #region Debug
         // Debug Output
@@ -80,12 +85,18 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
         // calculate new parameter
         _t += Time.deltaTime;
         _phi = _t * _w;
+        _phi = (_direction) ? _phi : (-1) * _phi;
         _angle = _phi + _c;
+
+
 
         // calculate new pose
         Vector3 newPos = NewCirclePosition();
-        Vector3 newRot = NewOrientation4ObjectMove();
-            
+        Vector3 newRot;// = NewOrientation4ObjectMove();
+
+        if (_turnObject) newRot = NewOrientation4ObjectMove();
+        else newRot = _startVector_ObjMov_Orientation;
+
         // set new pose
         _objMov.transform.SetPositionAndRotation(newPos, Quaternion.Euler(newRot));
         //_objMov.transform.SetPositionAndRotation(newPos, Quaternion.identity); // no turn of moving obj

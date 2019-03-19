@@ -17,14 +17,18 @@ public class StraightMove: IMoveBehaviorStrategy {
     private Rigidbody _rigidBody;
 
     private float _speed = 1;
-    private Vector3 _direction;
+    private Vector3 _v_connect;
+    private bool _direction;
+    
 
     #region Interface Methods
-    public void Init(GameObject objMov, GameObject objRef, float time2destination)
+    public void Init(GameObject objMov, GameObject objRef, float time2destination, bool direction, bool turnObject)
     {
 
         this.objMov = objMov;
         this.objRef = objRef;
+
+        this._direction = direction;
 
         _startVector = objMov.transform.position;
         _refVector = objRef.transform.position;
@@ -41,8 +45,10 @@ public class StraightMove: IMoveBehaviorStrategy {
         else
         {
             Debug.Log("StartMovement - StraightMove");
-            _direction = (_refVector - _startVector).normalized;
-            _rigidBody.velocity = _direction * this._speed;
+            _v_connect = (_refVector - _startVector).normalized;
+            _v_connect = (_direction) ? _v_connect : (-1) * _v_connect;
+
+            _rigidBody.velocity = _v_connect * this._speed;
         }
         
     }
