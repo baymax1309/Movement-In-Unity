@@ -38,6 +38,7 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
     private float _angle;
     private float _t;
 
+    private bool _stopMovement;
 
     
     
@@ -65,6 +66,8 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
         this._direction = direction;
         this._turnObject = turnObject;
 
+        this._stopMovement = true;
+
         #region Debug
         // Debug Output
         Debug.Log("--Init----------------------------");
@@ -76,10 +79,16 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
         #endregion
     }
 
-
-    int i = 1; // debug index
     public void StartMovement()
     {
+        _stopMovement = false;
+    }
+
+    int i = 1; // debug index
+    public void DoMovement()
+    {
+        if (_stopMovement) return;
+
         Debug.Log("i = " + i++); // inkrement
 
         // calculate new parameter
@@ -101,11 +110,23 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
         _objMov.transform.SetPositionAndRotation(newPos, Quaternion.Euler(newRot));
         //_objMov.transform.SetPositionAndRotation(newPos, Quaternion.identity); // no turn of moving obj
 
+
+        int vorzeichen = (_direction) ? 1 : -1;
+
+        
+
     }
 
     public void StopMovement()
     {
-        //_stopMovement = false;
+        _stopMovement = true;
+    }
+
+    public void ChangeDirection()
+    {
+        StopMovement();
+        this._direction = !_direction;
+        StartMovement();
     }
     #endregion
 
