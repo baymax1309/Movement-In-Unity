@@ -141,6 +141,8 @@ public class CircleMove : MonoBehaviour, IMoveBehaviorStrategy
 
         Vector3 newPosLocal = new Vector3(x, y, z);
 
+        Debug.LogWarning("there exists a problem when the ref-obj doesn't have the scale of (1,1,1)");
+
         // set global
         Vector3 newPosGlobal = _objRef.transform.TransformPoint(newPosLocal);
 
